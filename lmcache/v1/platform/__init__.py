@@ -23,6 +23,7 @@ automatically.
 """
 
 # Standard
+from typing import TYPE_CHECKING
 from typing import Any
 import os
 
@@ -38,6 +39,10 @@ from lmcache.v1.platform.event_notifier import (
     create_event_notifier as create_event_notifier,
 )
 from lmcache.v1.utils.subclass_discovery import discover_subclasses
+
+if TYPE_CHECKING:
+    # First Party
+    from lmcache.v1.platform.base_device_ops import DeviceOps
 
 logger = init_logger(__name__)
 
@@ -139,6 +144,35 @@ def get_device_spec(device_type: str) -> DeviceSpec | None:
         The DeviceSpec for the given device type, or None if not found.
     """
     return _DEVICE_REGISTRY.get(device_type)
+
+
+def resolve_device_ops_cls(device_type: str) -> "type[DeviceOps]":
+    """Resolve the ``DeviceOps`` class for *device_type*.
+
+    Args:
+        device_type: Device type string such as ``"cuda"`` or ``"cpu"``.
+
+    Returns:
+        The resolved :class:`DeviceOps` subclass for the requested device.
+
+    Raises:
+        RuntimeError: If an accelerator device has no registered
+            :class:`DeviceSpec`, since silently falling back to the torch
+            baseline on accelerator hardware would mask configuration errors.
+    """
+    spec = get_device_spec(device_type)
+    if spec is None:
+        if device_type in ("", "cpu"):
+            spec = DeviceSpec()
+        else:
+            raise RuntimeError(
+                f"No DeviceSpec registered for accelerator {device_type!r}; "
+                "refusing to silently fall back to the torch baseline on "
+                "accelerator hardware. Ensure the platform sub-package for this "
+                "device is importable and defines a DeviceSpec with ops_cls."
+            )
+
+    return spec.ops_cls
 
 
 torch_dev, torch_device_type = _detect_device()

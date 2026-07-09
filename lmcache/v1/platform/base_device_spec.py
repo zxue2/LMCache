@@ -74,6 +74,11 @@ class DeviceSpec:
         or DeviceSpec-discovery time, so resolving a spec never drags the torch
         baseline (or a native .so) into the platform package's import graph.
         The base returns the torch/CPU baseline; accelerator specs override.
+
+        Returns:
+            ``type[DeviceOps]``: The base ``DeviceOps`` torch/CPU baseline class
+            for the fallback spec. Accelerator subclasses override this
+            property to return their backend-specific ``DeviceOps`` subclass.
         """
         # First Party
         from lmcache.v1.platform.base_device_ops import DeviceOps

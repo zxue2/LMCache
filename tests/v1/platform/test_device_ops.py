@@ -15,8 +15,8 @@ import types
 import pytest
 
 # First Party
-from lmcache import _resolve_ops_cls
 import lmcache.v1.platform as platform_pkg
+from lmcache.v1.platform import resolve_device_ops_cls
 from lmcache.v1.platform import _torch_ops
 from lmcache.v1.platform.base_device_spec import DeviceSpec
 from lmcache.v1.platform.base_device_ops import OPS, DeviceOps
@@ -214,8 +214,9 @@ def test_bind_native_ignores_symbols_absent_from_ops(
 
 
 def test_cpu_and_empty_resolve_to_base_device_ops() -> None:
-    assert _resolve_ops_cls("cpu") is DeviceOps
-    assert _resolve_ops_cls("") is DeviceOps
+    """Without a concrete CPU spec, ``cpu`` and ``""`` use the base fallback."""
+    assert resolve_device_ops_cls("cpu") is DeviceOps
+    assert resolve_device_ops_cls("") is DeviceOps
 
 
 def test_unregistered_accelerator_fails_fast(isolated_registry: Any) -> None:
@@ -226,7 +227,7 @@ def test_unregistered_accelerator_fails_fast(isolated_registry: Any) -> None:
         RuntimeError,
         match="refusing to silently fall back to the torch baseline",
     ):
-        _resolve_ops_cls("cuda")
+        resolve_device_ops_cls("cuda")
 
 
 def test_new_device_needs_zero_resolver_edits(isolated_registry: Any) -> None:
@@ -245,7 +246,7 @@ def test_new_device_needs_zero_resolver_edits(isolated_registry: Any) -> None:
             return DummyDeviceOps
 
     platform_pkg._DEVICE_REGISTRY["dummy"] = DummyDeviceSpec()
-    assert _resolve_ops_cls("dummy") is DummyDeviceOps
+    assert resolve_device_ops_cls("dummy") is DummyDeviceOps
 
 
 def test_empty_device_type_is_skipped_during_discovery() -> None:
