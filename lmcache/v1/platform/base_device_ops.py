@@ -76,6 +76,20 @@ OPS: frozenset[str] = frozenset(
     }
 )
 
+#: Shared type names that a native pybind module may export and that should be
+#: rebound onto the shim so identity/``isinstance`` checks line up with the
+#: native structs. ``GPUKVFormat`` is a back-compat alias of ``EngineKVFormat``
+#: and handled specially in :meth:`DeviceOps._bind_native_types`.
+NATIVE_TYPE_NAMES: tuple[str, ...] = (
+    "TransferDirection",
+    "EngineKVFormat",
+    "PageBufferShapeDesc",
+    "StagingCopy",
+    "LaunchVar",
+    "BatchStep",
+    "KernelGroupSpec",
+)
+
 
 class DeviceOps:
     """Strategy base: classmethod-driven ops population for one device type.
@@ -116,6 +130,7 @@ class DeviceOps:
                 super().populate_module(target)  # torch baseline first
                 import my_native_module as native
                 cls._bind_native(target, native)
+                cls._bind_native_types(target, native)  # rebind native types
 
         Args:
             target: The object to set attributes on (typically a module or
@@ -147,3 +162,33 @@ class DeviceOps:
             fn = getattr(module, name, None)
             if fn is not None:
                 setattr(target, name, fn)
+
+    @classmethod
+    def _bind_native_types(cls, target: object, module: object) -> None:
+        """Rebind shared pybind *types* from a compiled module onto *target*.
+
+        Restores the behavior of the former ``__dict__.update`` merge: whatever
+        shared types the native module exports replace the pure-Python
+        ``ops_types`` stubs, so identity / ``isinstance`` checks (and passing a
+        value into a native function that expects the pybind struct) line up
+        with the native boundary. Enums already compare by value via
+        :class:`~enum.IntEnum`; this fixes the *identity* side.
+
+        Types the module does not export are skipped, so this is safe for
+        partial backends: the SYCL ``xpu_ops`` module, for example, only exports
+        ``TransferDirection`` / ``EngineKVFormat`` (+ the ``GPUKVFormat`` alias)
+        and no ``PageBufferShapeDesc`` / plan structs, and those simply keep the
+        Python stubs already installed by :meth:`populate_module`.
+        """
+        for name in NATIVE_TYPE_NAMES:
+            native_type = getattr(module, name, None)
+            if native_type is not None:
+                setattr(target, name, native_type)
+        # ``GPUKVFormat`` is a back-compat alias of ``EngineKVFormat``. Prefer a
+        # native alias if the module exports one; otherwise mirror whatever
+        # ``EngineKVFormat`` resolved to above so the alias never diverges.
+        native_alias = getattr(module, "GPUKVFormat", None)
+        if native_alias is not None:
+            target.GPUKVFormat = native_alias  # type: ignore[attr-defined]
+        elif getattr(module, "EngineKVFormat", None) is not None:
+            target.GPUKVFormat = module.EngineKVFormat  # type: ignore[attr-defined]
