@@ -67,7 +67,7 @@ class DeviceSpec:
         return "cpu"
 
     @property
-    def ops_cls(self: "DeviceSpec") -> "type[DeviceOps]":
+    def ops_cls(self) -> "type[DeviceOps]":
         """DeviceOps subclass providing the ``lmcache.c_ops`` surface.
 
         Lazy by design: the import happens on *access*, not at class-definition

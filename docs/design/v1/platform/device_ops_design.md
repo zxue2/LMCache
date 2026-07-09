@@ -294,6 +294,7 @@ registry.
 class DeviceSpec:
     @property
     def ops_cls(self) -> type[DeviceOps]:
+        """DeviceOps subclass providing the ``lmcache.c_ops`` surface."""
         from lmcache.v1.platform.base_device_ops import DeviceOps
 
         return DeviceOps

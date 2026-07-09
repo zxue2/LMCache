@@ -213,7 +213,7 @@ def test_bind_native_ignores_symbols_absent_from_ops(
 # -- DeviceSpec resolution -------------------------------------------------
 
 
-def test_cpu_and_empty_resolve_to_correct_device_ops_classes() -> None:
+def test_cpu_and_empty_string_resolve_to_expected_ops_classes() -> None:
     """``cpu`` resolves via CpuDeviceSpec; ``""`` uses the bare fallback."""
     assert resolve_device_ops_cls("cpu") is CpuDeviceOps
     assert resolve_device_ops_cls("") is DeviceOps
