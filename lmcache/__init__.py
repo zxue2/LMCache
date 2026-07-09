@@ -35,9 +35,22 @@ def _install_c_ops_shim() -> None:
     ``import lmcache.c_ops`` call sites keep working without change.
     """
     # First Party
-    from lmcache.v1.platform._device_ops_registry import get_device_ops_cls
+    from lmcache.v1.platform import get_device_spec
+    from lmcache.v1.platform.base_device_spec import DeviceSpec
 
-    ops_cls = get_device_ops_cls(torch_device_type)
+    spec = get_device_spec(torch_device_type)
+    if spec is None:
+        if torch_device_type in ("", "cpu"):
+            spec = DeviceSpec()
+        else:
+            raise RuntimeError(
+                f"No DeviceSpec registered for accelerator {torch_device_type!r}; "
+                "refusing to silently fall back to the torch baseline on "
+                "accelerator hardware. Ensure the platform sub-package for this "
+                "device is importable and defines a DeviceSpec with ops_cls."
+            )
+
+    ops_cls = spec.ops_cls
 
     shim = types.ModuleType("lmcache.c_ops")
     # NOTE: Do NOT register the shim in sys.modules before populate_module.
