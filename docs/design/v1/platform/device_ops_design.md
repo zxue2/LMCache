@@ -319,7 +319,9 @@ The import lives inside the property body on purpose:
 Resolution is still fail-fast for accelerators. If `_install_c_ops_shim()` is
 asked for `"cuda"` / `"xpu"` / `"musa"` / `"hpu"` and no `DeviceSpec` is
 registered, it raises instead of silently falling back to the torch baseline.
-Only `""` / `"cpu"` legitimately use the baseline fallback.
+The normal CPU path resolves through `CpuDeviceSpec -> CpuDeviceOps`; only `""`
+(and a deliberately cleared CPU registry in tests / CLI-only fallback paths)
+uses the bare `DeviceSpec -> DeviceOps` baseline.
 
 ### 5.1  `platform/` tree
 
@@ -340,7 +342,7 @@ lmcache/v1/platform/
   event_notifier.py
   _registry.py
   cpu/
-    __init__.py               # fallback CPU package; no dedicated ops_cls override
+    __init__.py               # ★ CpuDeviceSpec.ops_cls -> CpuDeviceOps
     device_ops.py             # ★ CpuDeviceOps (no overrides = base)
     cache_context.py
     shm.py

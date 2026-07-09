@@ -214,8 +214,8 @@ def test_bind_native_ignores_symbols_absent_from_ops(
 
 
 def test_cpu_and_empty_resolve_to_base_device_ops() -> None:
-    """Without a concrete CPU spec, ``cpu`` and ``""`` use the base fallback."""
-    assert resolve_device_ops_cls("cpu") is DeviceOps
+    """``cpu`` resolves via CpuDeviceSpec; ``""`` uses the bare fallback."""
+    assert resolve_device_ops_cls("cpu") is CpuDeviceOps
     assert resolve_device_ops_cls("") is DeviceOps
 
 

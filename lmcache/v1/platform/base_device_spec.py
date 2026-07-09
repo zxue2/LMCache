@@ -76,9 +76,9 @@ class DeviceSpec:
         The base returns the torch/CPU baseline; accelerator specs override.
 
         Returns:
-            ``type[DeviceOps]``: The base ``DeviceOps`` torch/CPU baseline class
-            for the fallback spec. Accelerator subclasses override this
-            property to return their backend-specific ``DeviceOps`` subclass.
+            type[DeviceOps]: The base DeviceOps torch/CPU baseline class for the
+            fallback spec. Accelerator subclasses override this property to
+            return their backend-specific DeviceOps subclass.
         """
         # First Party
         from lmcache.v1.platform.base_device_ops import DeviceOps
