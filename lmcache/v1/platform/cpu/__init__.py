@@ -12,7 +12,14 @@ from lmcache.v1.platform.base_device_spec import DeviceSpec
 
 
 class CpuDeviceSpec(DeviceSpec):
-    """CPU device specification for the detection registry."""
+    """CPU device specification for the detection registry.
+
+    This keeps CPU aligned with the accelerator-specific resolution path:
+    callers asking for ``device_type="cpu"`` receive a concrete
+    :class:`CpuDeviceOps` class through :attr:`DeviceSpec.ops_cls`, while the
+    bare :class:`DeviceSpec` remains available as the fallback for
+    ``device_type=""`` or deliberately stripped test registries.
+    """
 
     @property
     def device_type(self) -> str:

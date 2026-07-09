@@ -219,10 +219,21 @@ def test_cpu_and_empty_resolve_to_base_device_ops() -> None:
     assert resolve_device_ops_cls("") is DeviceOps
 
 
-def test_unregistered_accelerator_fails_fast(isolated_registry: Any) -> None:
+def test_cpu_without_registered_spec_falls_back_to_base_device_ops(
+    isolated_registry: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    table = {k: v for k, v in isolated_registry.items() if k != "cpu"}
+    monkeypatch.setattr(platform_pkg, "_DEVICE_REGISTRY", table)
+    assert resolve_device_ops_cls("cpu") is DeviceOps
+
+
+def test_unregistered_accelerator_fails_fast(
+    isolated_registry: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A requested accelerator with no registered class is a hard error -- no
     silent degradation to the torch baseline."""
-    platform_pkg._DEVICE_REGISTRY.pop("cuda", None)
+    table = {k: v for k, v in isolated_registry.items() if k != "cuda"}
+    monkeypatch.setattr(platform_pkg, "_DEVICE_REGISTRY", table)
     with pytest.raises(
         RuntimeError,
         match="refusing to silently fall back to the torch baseline",
@@ -230,7 +241,9 @@ def test_unregistered_accelerator_fails_fast(isolated_registry: Any) -> None:
         resolve_device_ops_cls("cuda")
 
 
-def test_new_device_needs_zero_resolver_edits(isolated_registry: Any) -> None:
+def test_new_device_needs_zero_resolver_edits(
+    isolated_registry: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Scalability: a fresh DeviceSpec resolves with no resolver change."""
 
     class DummyDeviceOps(DeviceOps):
@@ -245,7 +258,11 @@ def test_new_device_needs_zero_resolver_edits(isolated_registry: Any) -> None:
         def ops_cls(self) -> "type[DeviceOps]":
             return DummyDeviceOps
 
-    platform_pkg._DEVICE_REGISTRY["dummy"] = DummyDeviceSpec()
+    monkeypatch.setattr(
+        platform_pkg,
+        "_DEVICE_REGISTRY",
+        {**isolated_registry, "dummy": DummyDeviceSpec()},
+    )
     assert resolve_device_ops_cls("dummy") is DummyDeviceOps
 
 

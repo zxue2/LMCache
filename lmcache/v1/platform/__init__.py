@@ -154,6 +154,10 @@ def resolve_device_ops_cls(device_type: str) -> "type[DeviceOps]":
 
     Returns:
         The resolved :class:`DeviceOps` subclass for the requested device.
+        ``"cpu"`` normally resolves through :class:`CpuDeviceSpec`, while
+        ``""`` uses the bare :class:`DeviceSpec` fallback. If tests or
+        CLI-only fallback paths deliberately remove the CPU spec from the
+        registry, ``"cpu"`` also falls back to the bare baseline.
 
     Raises:
         RuntimeError: If an accelerator device has no registered
