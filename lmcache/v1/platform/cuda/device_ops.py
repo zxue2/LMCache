@@ -28,12 +28,19 @@ def _load_native():
     """Import the compiled CUDA extension (``lmcache.c_ops``)."""
     try:
         return importlib.import_module("lmcache.c_ops")
-    except ImportError:
+    except ImportError as exc:
+        # Preserve the original cause (``from exc``) so a *built-but-failing*
+        # extension -- e.g. a missing transitive symbol or a libcuda.so.1 load
+        # failure surfacing as ImportError -- is diagnosable. The shim is
+        # intentionally kept out of sys.modules while this runs (see the note in
+        # ``lmcache/__init__.py``), so an ImportError here does not by itself
+        # mean the extension was never built.
         raise RuntimeError(
             "CudaDeviceOps requires the compiled 'lmcache.c_ops' extension "
             "but it could not be imported. Ensure the package was built with "
-            "CUDA support (BUILD_WITH_CUDA=1 or the cuda build profile)."
-        ) from None
+            "CUDA support (BUILD_WITH_CUDA=1 or the cuda build profile). "
+            f"Original import error: {exc}"
+        ) from exc
 
 
 class CudaDeviceOps(DeviceOps):
