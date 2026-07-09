@@ -213,7 +213,7 @@ def test_bind_native_ignores_symbols_absent_from_ops(
 # -- DeviceSpec resolution -------------------------------------------------
 
 
-def test_cpu_and_empty_resolve_to_base_device_ops() -> None:
+def test_cpu_and_empty_resolve_to_correct_device_ops_classes() -> None:
     """``cpu`` resolves via CpuDeviceSpec; ``""`` uses the bare fallback."""
     assert resolve_device_ops_cls("cpu") is CpuDeviceOps
     assert resolve_device_ops_cls("") is DeviceOps
@@ -239,6 +239,14 @@ def test_unregistered_accelerator_fails_fast(
         match="refusing to silently fall back to the torch baseline",
     ):
         resolve_device_ops_cls("cuda")
+
+
+def test_unknown_accelerator_fails_fast_without_registry_edits() -> None:
+    with pytest.raises(
+        RuntimeError,
+        match="refusing to silently fall back to the torch baseline",
+    ):
+        resolve_device_ops_cls("definitely-not-a-real-device")
 
 
 def test_new_device_needs_zero_resolver_edits(
