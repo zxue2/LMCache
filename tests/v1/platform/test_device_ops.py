@@ -15,8 +15,8 @@ import types
 import pytest
 
 # First Party
+from lmcache import _resolve_ops_cls
 import lmcache.v1.platform as platform_pkg
-from lmcache.v1.platform import get_device_spec
 from lmcache.v1.platform import _torch_ops
 from lmcache.v1.platform.base_device_spec import DeviceSpec
 from lmcache.v1.platform.base_device_ops import OPS, DeviceOps
@@ -30,20 +30,6 @@ from lmcache.v1.platform.ops_types import (
     StagingCopy,
     TransferDirection,
 )
-
-
-def _resolve_ops_cls(device_type: str) -> type[DeviceOps]:
-    spec = get_device_spec(device_type)
-    if spec is None:
-        if device_type in ("", "cpu"):
-            return DeviceSpec().ops_cls
-        raise RuntimeError(
-            f"No DeviceSpec registered for accelerator {device_type!r}; "
-            "refusing to silently fall back to the torch baseline on "
-            "accelerator hardware. Ensure the platform sub-package for this "
-            "device is importable and defines a DeviceSpec with ops_cls."
-        )
-    return spec.ops_cls
 
 
 @pytest.fixture
@@ -227,7 +213,7 @@ def test_bind_native_ignores_symbols_absent_from_ops(
 # -- DeviceSpec resolution -------------------------------------------------
 
 
-def test_cpu_and_empty_resolve_to_baseline(isolated_registry: Any) -> None:
+def test_cpu_and_empty_resolve_to_base_device_ops() -> None:
     assert _resolve_ops_cls("cpu") is DeviceOps
     assert _resolve_ops_cls("") is DeviceOps
 
